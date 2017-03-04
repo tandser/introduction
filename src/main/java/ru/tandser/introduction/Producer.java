@@ -103,7 +103,6 @@ public class Producer implements Runnable {
     }
 
     /**
-     *
      * Выполняет основную логику работы производителя по отправке
      * сообщений и протоколированию.
      */
@@ -115,9 +114,9 @@ public class Producer implements Runnable {
             session = connection.createSession(false, sessionMode);
             MessageProducer producer = session.createProducer(destination);
             producer.setDeliveryMode(deliveryMode);
-            String name = String.format("%s-%s", getClass().getSimpleName(), currentThread().getName());
+            String name = format("%s-%s", getClass().getSimpleName(), currentThread().getName());
             for (int i = 0; i < numberOfPosts; i++) {
-                String text = String.format("Message %d from %s", i, name);
+                String text = format("Message %d from %s", i, name);
                 TextMessage textMessage = session.createTextMessage(text);
                 producer.send(textMessage);
                 logger.info(format("Sent     : %08X : %s", text.hashCode(), name));

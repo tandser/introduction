@@ -8,7 +8,6 @@ import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
@@ -17,16 +16,17 @@ import static java.lang.Thread.currentThread;
 public class Consumer implements Runnable, MessageListener {
 
     /**
-     * Логгер для протоколирования. Конфигурация логгера
-     * располагается в <i>classpath</i> / <i>logback.xml</i>.
+     * Логгер для протоколирования. Конфигурация логгера располагается
+     * в <i>classpath</i> / <i>logback.xml</i>.
      */
     private static final Logger logger = LoggerFactory.getLogger(Consumer.class);
 
     /**
-     * Исходный JNDI-контекст для выполнения операций
-     * присвоения имён. У каждого потока будет своя
-     * копия локальной переменной поскольку {@link Context}
-     * не потокобезопасен.
+     * Исходный JNDI-контекст для выполнения операций присвоения имён.
+     * У каждого потока будет своя копия локальной переменной поскольку
+     * <tt>Context</tt> не потокобезопасен.
+     *
+     * @see <a href="https://docs.oracle.com/javase/7/docs/api/javax/naming/Context.html">Context</a>
      */
     private static ThreadLocal<Context> context = new ThreadLocal<Context>() {
         @Override
@@ -39,11 +39,7 @@ public class Consumer implements Runnable, MessageListener {
         }
     };
 
-    /**
-     * Общее соединение для потребителей сообщений.
-     * {@link Connection} поддерживает одновременное
-     * использование.
-     */
+
     private static Connection connection;
 
     private static AtomicInteger recieved = new AtomicInteger();
@@ -83,7 +79,7 @@ public class Consumer implements Runnable, MessageListener {
     public void onMessage(Message message) {
         try {
             if (message instanceof TextMessage) {
-                String name = String.format("%s-%s", getClass().getSimpleName(), currentThread().getName());
+                String name = format("%s-%s", getClass().getSimpleName(), currentThread().getName());
                 logger.info(format("Received : %08X : %s", ((TextMessage) message).getText().hashCode(), name));
                 if (sessionMode == Session.CLIENT_ACKNOWLEDGE) {
                     message.acknowledge();
