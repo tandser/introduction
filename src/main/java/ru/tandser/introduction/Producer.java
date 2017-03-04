@@ -1,5 +1,8 @@
 package ru.tandser.introduction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -8,25 +11,81 @@ import javax.naming.NamingException;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 
+/**
+ * Этот класс представляет собой клиента, который производит
+ * сообщения с помощью поставщика JMS, реализующего классический
+ * API версии 1.1.
+ *
+ * @author Andrew Timokhin
+ * @since  1.0
+ */
 public class Producer implements Runnable {
 
+    /**
+     * Логгер для протоколирования. Конфигурация логгера располагается
+     * в <i>classpath</i> / <i>logback.xml</i>.
+     */
+    private static final Logger logger = LoggerFactory.getLogger(Producer.class);
+
+    /**
+     * Исходный JNDI-контекст для выполнения операций присвоения имён.
+     * У каждого потока будет своя копия локальной переменной поскольку
+     * <tt>Context</tt> не потокобезопасен.
+     *
+     * @see <a href="https://docs.oracle.com/javase/7/docs/api/javax/naming/Context.html">Context</a>
+     */
     private static ThreadLocal<Context> context = new ThreadLocal<Context>() {
         @Override
         protected Context initialValue() {
-        try {
-            return new InitialContext();
-        } catch (NamingException exc) {
-            throw new RuntimeException(exc);
-        }
+            try {
+                return new InitialContext();
+            } catch (NamingException exc) {
+                throw new RuntimeException(exc);
+            }
         }
     };
 
+    /**
+     * Общее соединение с провайдером JMS для производителей сообщений.
+     * <tt>Connection</tt> является потокобезопасным и разделяемым в
+     * целях снижения издержек на открытие нового соединения.
+     *
+     * @see <a href="https://docs.oracle.com/javaee/7/api/javax/jms/Connection.html">Connection</a>
+     */
     private static Connection connection;
 
+    /**
+     * Режим подтверждения доставки сообщения. Инициализуруется
+     * константой интерфейса <tt>Session</tt>.
+     *
+     * @see <a href="http://docs.oracle.com/javaee/7/api/javax/jms/Session.html#field.summary">Session</a>
+     */
     private int sessionMode;
+
+    /**
+     * Режим доставки сообщения. Инициализируется константой интерфейса
+     * <tt>DeliveryMode</tt>.
+     *
+     * @see <a href="https://docs.oracle.com/javaee/7/api/javax/jms/DeliveryMode.html#field.summary">DeliveryMode</a>
+     */
     private int deliveryMode;
+
+    /**
+     * Количество сообщений, которое будет отправлено производителем.
+     */
     private int numberOfPosts;
 
+    /**
+     * Создаёт производителя с указанными режимами подтверждения
+     * доставки и стойкости сообщений, а также количеством сообщений,
+     * которые необходимо отправить. Помимо этого выполняет первичную
+     * инициализацию общего соединения.
+     *
+     * @param sessionMode   режим подтверждения доставки сообщения
+     * @param deliveryMode  режим доставки сообщения
+     * @param numberOfPosts количество сообщений, которое будет
+     *                      отправлено производителем
+     */
     public Producer(int sessionMode, int deliveryMode, int numberOfPosts) {
         this.sessionMode   = sessionMode;
         this.deliveryMode  = deliveryMode;
@@ -43,6 +102,11 @@ public class Producer implements Runnable {
         }
     }
 
+    /**
+     *
+     * Выполняет основную логику работы производителя по отправке
+     * сообщений и протоколированию.
+     */
     @Override
     public void run() {
         Session session = null;
@@ -56,7 +120,7 @@ public class Producer implements Runnable {
                 String text = String.format("Message %d from %s", i, name);
                 TextMessage textMessage = session.createTextMessage(text);
                 producer.send(textMessage);
-                System.out.println(format("Sent     : %08X : %s", text.hashCode(), name));
+                logger.info(format("Sent     : %08X : %s", text.hashCode(), name));
             }
         } catch (NamingException | JMSException exc) {
             throw new RuntimeException(exc);
@@ -71,6 +135,11 @@ public class Producer implements Runnable {
         }
     }
 
+    /**
+     * Закрывает соединение и высвобождает выделенные ресурсы.
+     *
+     * @see <a href="https://docs.oracle.com/javaee/7/api/javax/jms/Connection.html#close--">Connection.close()</a>
+     */
     public static void close() {
         if (connection != null) {
             try {
