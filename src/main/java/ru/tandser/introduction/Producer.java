@@ -14,7 +14,8 @@ import static java.lang.Thread.currentThread;
 /**
  * Этот класс представляет собой клиента, который производит
  * сообщения с помощью поставщика JMS, реализующего классический
- * API версии 1.1.
+ * API версии 1.1. Производитель сообщений может быть запущен как в
+ * основном, так и в отдельном потоке исполнения.
  *
  * @author Andrew Timokhin
  * @since  1.0
@@ -40,6 +41,7 @@ public class Producer implements Runnable {
             try {
                 return new InitialContext();
             } catch (NamingException exc) {
+                logger.error("There was an error at initial context initialization", exc);
                 throw new RuntimeException(exc);
             }
         }
@@ -96,6 +98,7 @@ public class Producer implements Runnable {
                 connection = ((ConnectionFactory) context.get().lookup("ConnectionFactory")).createConnection();
                 connection.start();
             } catch (NamingException | JMSException exc) {
+                logger.error("There was an error at connection initialization", exc);
                 throw new RuntimeException(exc);
             }
         }
@@ -122,6 +125,7 @@ public class Producer implements Runnable {
                 logger.info("Sent      : {}", format("%08x : %s", text.hashCode(), currentThread().getName()));
             }
         } catch (NamingException | JMSException exc) {
+            logger.error("There was an error in work of the producer of messages", exc);
             throw new RuntimeException(exc);
         }
     }
@@ -136,6 +140,7 @@ public class Producer implements Runnable {
             try {
                 connection.close();
             } catch (JMSException exc) {
+                logger.error("There was an error when closing connection", exc);
                 throw new RuntimeException(exc);
             }
         }

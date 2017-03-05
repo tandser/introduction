@@ -16,7 +16,8 @@ import static java.lang.Thread.currentThread;
 /**
  * Этот класс представляет собой клиента, который потребляет
  * сообщения с помощью поставщика JMS, реализующего классический
- * API версии 1.1.
+ * API версии 1.1. Потребитель сообщений может быть запущен как в
+ * основном, так и в отдельном потоке исполнения.
  *
  * @author Andrew Timokhin
  * @since  1.0
@@ -42,6 +43,7 @@ public class Consumer implements Runnable, MessageListener {
             try {
                 return new InitialContext();
             } catch (NamingException exc) {
+                logger.error("There was an error at initial context initialization", exc);
                 throw new RuntimeException(exc);
             }
         }
@@ -104,6 +106,7 @@ public class Consumer implements Runnable, MessageListener {
                 connection = ((ConnectionFactory) context.get().lookup("ConnectionFactory")).createConnection();
                 connection.start();
             } catch (NamingException | JMSException exc) {
+                logger.error("There was an error at connection initialization", exc);
                 throw new RuntimeException(exc);
             }
         }
@@ -123,6 +126,7 @@ public class Consumer implements Runnable, MessageListener {
             MessageConsumer consumer = session.createConsumer(destination);
             consumer.setMessageListener(this);
         } catch (NamingException | JMSException exc) {
+            logger.error("There was an error in work of the consumer of messages", exc);
             throw new RuntimeException(exc);
         }
     }
@@ -148,6 +152,7 @@ public class Consumer implements Runnable, MessageListener {
                 }
             }
         } catch (JMSException exc) {
+            logger.error("There was an error when obtaining the message", exc);
             throw new RuntimeException(exc);
         }
     }
@@ -162,6 +167,7 @@ public class Consumer implements Runnable, MessageListener {
             try {
                 connection.close();
             } catch (JMSException exc) {
+                logger.error("There was an error when closing connection", exc);
                 throw new RuntimeException(exc);
             }
         }

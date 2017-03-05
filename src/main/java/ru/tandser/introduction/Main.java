@@ -6,13 +6,11 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        Consumer consumer = new Consumer(Session.CLIENT_ACKNOWLEDGE, 100);
-        Producer producer = new Producer(Session.CLIENT_ACKNOWLEDGE, DeliveryMode.NON_PERSISTENT, 100);
-        Thread threadC = new Thread(consumer);
-        Thread threadP = new Thread(producer);
-        threadC.start();
-        threadP.start();
-        TimeUnit.SECONDS.sleep(10);
+        Consumer consumer = new Consumer(Session.AUTO_ACKNOWLEDGE, 100);
+        Producer producer = new Producer(Session.AUTO_ACKNOWLEDGE, DeliveryMode.NON_PERSISTENT, 100);
+        new Thread(consumer).start();
+        new Thread(producer).start();
+        TimeUnit.SECONDS.sleep(3);
         Consumer.close();
         Producer.close();
     }
