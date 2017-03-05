@@ -98,8 +98,9 @@ public class Producer implements Runnable {
             } catch (NamingException | JMSException exc) {
                 throw new RuntimeException(exc);
             }
-
         }
+
+        logger.info("Create {}", toString());
     }
 
     /**
@@ -108,10 +109,9 @@ public class Producer implements Runnable {
      */
     @Override
     public void run() {
-        Session session = null;
         try {
             Destination destination = (Destination) context.get().lookup("MyQueue");
-            session = connection.createSession(false, sessionMode);
+            Session session = connection.createSession(false, sessionMode);
             MessageProducer producer = session.createProducer(destination);
             producer.setDeliveryMode(deliveryMode);
             String name = format("%s-%s", getClass().getSimpleName(), currentThread().getName());
@@ -119,23 +119,15 @@ public class Producer implements Runnable {
                 String text = format("Message %d from %s", i, name);
                 TextMessage textMessage = session.createTextMessage(text);
                 producer.send(textMessage);
-                logger.info(format("Sent     : %08X : %s", text.hashCode(), name));
+                logger.info("Sent      : {}", format("%08x : %s", text.hashCode(), currentThread().getName()));
             }
         } catch (NamingException | JMSException exc) {
             throw new RuntimeException(exc);
-        } finally {
-            if (session != null) {
-                try {
-                    session.close();
-                } catch (JMSException exc) {
-                    throw new RuntimeException(exc);
-                }
-            }
         }
     }
 
     /**
-     * Закрывает соединение и высвобождает выделенные ресурсы.
+     * Закрывает соединение и высвобождает все выделенные ресурсы.
      *
      * @see <a href="https://docs.oracle.com/javaee/7/api/javax/jms/Connection.html#close--">Connection.close()</a>
      */
@@ -147,5 +139,52 @@ public class Producer implements Runnable {
                 throw new RuntimeException(exc);
             }
         }
+    }
+
+    /**
+     * Возвращает строковое представление данного производителя
+     * сообщений. Строковое представление состоит из простого имени
+     * класса и заключённых в квадратные скобки и разделённых запятыми
+     * режимов подтверждения доставки и стойкости сообщений, а также
+     * количества сообщений, которое будет отправлено производителем.
+     *
+     * @return возвращает строкове представление данного производителя
+     *         сообщений
+     */
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(getClass().getSimpleName())
+               .append("[")
+               .append("session mode: ");
+
+        switch (sessionMode) {
+            case 0  : builder.append("SESSION_TRANSACTED, ");
+                      break;
+            case 1  : builder.append("AUTO_ACKNOWLEDGE, ");
+                      break;
+            case 2  : builder.append("CLIENT_ACKNOWLEDGE, ");
+                      break;
+            case 3  : builder.append("DUPS_OK_ACKNOWLEDGE, ");
+                      break;
+            default : builder.append("invalid");
+        }
+
+        builder.append("delivery mode: ");
+
+        switch (deliveryMode) {
+            case 1  : builder.append("NON_PERSISTENT, ");
+                      break;
+            case 2  : builder.append("PERSISTENT, ");
+                      break;
+            default : builder.append("invalid");
+        }
+
+        builder.append("number of posts: ")
+               .append(numberOfPosts)
+               .append("]");
+
+        return builder.toString();
     }
 }

@@ -13,9 +13,7 @@ public class Main {
         threadC.start();
         threadP.start();
         TimeUnit.SECONDS.sleep(10);
-        consumer.close();
-        producer.close();
-        System.out.println(threadC.getState());
-        System.out.println(threadP.getState());
+        Consumer.close();
+        Producer.close();
     }
 }
