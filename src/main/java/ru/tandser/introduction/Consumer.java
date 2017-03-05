@@ -187,13 +187,13 @@ public class Consumer implements Runnable, MessageListener {
 
         switch (sessionMode) {
             case 0  : builder.append("SESSION_TRANSACTED, ");
-                break;
+                      break;
             case 1  : builder.append("AUTO_ACKNOWLEDGE, ");
-                break;
+                      break;
             case 2  : builder.append("CLIENT_ACKNOWLEDGE, ");
-                break;
+                      break;
             case 3  : builder.append("DUPS_OK_ACKNOWLEDGE, ");
-                break;
+                      break;
             default : builder.append("invalid");
         }
 
